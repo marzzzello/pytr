@@ -332,15 +332,25 @@ class Timeline:
                             isSavingsPlan = True
                             break
 
+        # Dividende
+        isDividende = False
+        for section in response['sections']:
+            if (section['type'] == 'text') and (section['title'] == 'Dividende'):
+                isDividende = True
+                break
+
+        extension_information = ''
         if response['subtitleText'] != 'Sparplan' and isSavingsPlan is True:
-            isSavingsPlan_fmt = ' -- SPARPLAN'
-        else:
-            isSavingsPlan_fmt = ''
+            extension_information = ' -- SPARPLAN'
+
+        if isDividende:
+            extension_information = ' -- DIVIDENDE'
+
 
         max_details_digits = len(str(self.num_timeline_details))
         self.log.info(
             f"{self.received_detail:>{max_details_digits}}/{self.num_timeline_details}: "
-            + f"{response['titleText']} -- {response['subtitleText']}{isSavingsPlan_fmt}"
+            + f"{response['titleText']} -- {response['subtitleText']}{extension_information}"
         )
 
         for section in response['sections']:
@@ -354,13 +364,19 @@ class Timeline:
                         # save all savingsplan documents in a subdirectory
                         if isSavingsPlan:
                             dl.dl_doc(doc, response['titleText'], response['subtitleText'], subfolder='Sparplan')
-                        else:
-                            # In case of a stock transfer (Wertpapierübertrag) add additional information to the document title
-                            if response['titleText'] == 'Wertpapierübertrag':
-                                body = next(item['data']['body'] for item in self.events_with_docs if item['data']['id'] == response['id'])
-                                dl.dl_doc(doc, response['titleText'] + " - " + body, response['subtitleText'])
-                            else:
-                                dl.dl_doc(doc, response['titleText'], response['subtitleText'])
+                            continue
+
+                        if isDividende:
+                            dl.dl_doc(doc, "Dividende - " + response['titleText'], response['subtitleText'])
+                            continue
+
+                        # In case of a stock transfer (Wertpapierübertrag) add additional information to the document title
+                        if response['titleText'] == 'Wertpapierübertrag':
+                            body = next(item['data']['body'] for item in self.events_with_docs if item['data']['id'] == response['id'])
+                            dl.dl_doc(doc, response['titleText'] + " - " + body, response['subtitleText'])
+                            continue
+
+                        dl.dl_doc(doc, response['titleText'], response['subtitleText'])
 
         if self.received_detail == self.num_timeline_details:
             self.log.info('Received all details')
