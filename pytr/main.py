@@ -16,6 +16,7 @@ from pytr.account import login
 from pytr.portfolio import Portfolio
 from pytr.alarms import Alarms
 from pytr.details import Details
+from pytr.transactions import Transactions
 
 
 def get_main_parser():
@@ -155,6 +156,20 @@ def get_main_parser():
     parser_completion = parser_cmd.add_parser(
         'completion', formatter_class=argparse.ArgumentDefaultsHelpFormatter, help=info, description=info
     )
+    # transactions
+    info = 'Export all transactions to csv'
+    transactions = parser_cmd.add_parser(
+        'transactions',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        parents=[parser_login_args],
+        help=info,
+        description=info,
+    )
+    transactions.add_argument(
+        'output', help='Output path of CSV file', metavar='OUTPUT', type=Path)
+    transactions.add_argument(
+        '--last_days', help='Number of last days to include (use 0 get all days, defaults to 14)', metavar='DAYS', default=14, type=int
+    )
     shtab.add_argument_to(parser_completion, "shell", parent=parser)
     return parser
 
@@ -221,6 +236,12 @@ def main():
         p.get()
         if args.output is not None:
             p.portfolio_to_csv(args.output)
+    elif args.command == 'transactions':
+        Transactions(
+            login(phone_no=args.phone_no, pin=args.pin, web=not args.applogin),
+            output_path=args.output,
+            last_days=args.last_days
+        ).get()
     elif args.command == 'export_transactions':
         export_transactions(args.input, args.output, args.lang)
     elif args.version:

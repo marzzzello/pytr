@@ -396,6 +396,13 @@ class TradeRepublicApi:
     async def portfolio_status(self):
         return await self.subscribe({'type': 'portfolioStatus'})
 
+    async def timeline_transactions(self, after=None):
+        sub = {"type":"timelineTransactions"}
+        if after is not None:
+            sub.update({"after": after})
+
+        return await self.subscribe(sub)
+
     async def compact_portfolio(self):
         return await self.subscribe({'type': 'compactPortfolio'})
 
